@@ -8,8 +8,8 @@ import textwrap
 import streamlit as st
 
 # Define the paths
-tokenized_path = '/Users/abhishekshah/Desktop/Legal project/archive/legal.tokens.par'
-corpus_path = '/Users/abhishekshah/Desktop/Legal project/archive/legal.corpus.par'
+tokenized_path = 'https://drive.google.com/file/d/1kLITMyhh3OBynei3HX0qF67pIshhIuJy/view?usp=sharing'
+corpus_path = 'https://drive.google.com/file/d/1cwKsLjcoIvInmRTGhAvxWCXy1qWPvHru/view?usp=sharing'
 
 # Function to load data efficiently
 @st.cache_resource
