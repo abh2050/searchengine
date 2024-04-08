@@ -12,7 +12,7 @@ tokenized_path = 'https://drive.google.com/file/d/1kLITMyhh3OBynei3HX0qF67pIshhI
 corpus_path = 'https://drive.google.com/file/d/1cwKsLjcoIvInmRTGhAvxWCXy1qWPvHru/view?usp=sharing'
 
 # Function to load data efficiently
-@st.cache_resource
+@st.cache_data
 def load_data_efficiently():
     st.write("Loading data...")
     tokenized_df = pl.read_parquet(tokenized_path)
