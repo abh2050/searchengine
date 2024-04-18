@@ -2,18 +2,18 @@ from pathlib import Path
 import polars as pl
 from rank_bm25 import BM25Okapi
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
 import numpy as np
 import textwrap
 import streamlit as st
 
 # Define the paths
-tokenized_path = 'https://drive.google.com/file/d/1kLITMyhh3OBynei3HX0qF67pIshhIuJy/view?usp=sharing'
-corpus_path = 'https://drive.google.com/file/d/1cwKsLjcoIvInmRTGhAvxWCXy1qWPvHru/view?usp=sharing'
+data_path = Path('data').resolve()
+tokenized_dir = data_path / 'legal.tokens.par'
+corpus_dir = data_path / 'legal.corpus.par'
 
 # Function to load data efficiently
 @st.cache_data
-def load_data_efficiently():
+def load_data_efficiently(corpus_path, tokenized_path):
     st.write("Loading data...")
     tokenized_df = pl.read_parquet(tokenized_path)
     documents_df = pl.read_parquet(corpus_path)
@@ -26,7 +26,7 @@ st.write("Please wait while the app loads the initial data. This may take 1-2 mi
 
 # Display a progress bar while loading data
 with st.spinner("Loading data..."):
-    bm25_model, documents_df = load_data_efficiently()
+    bm25_model, documents_df = load_data_efficiently(corpus_dir, tokenized_dir)
 
 def bm25_search_with_opinion(query, bm25, documents_df, max_length, top_n=5):
     # Tokenize the query and get BM25 scores

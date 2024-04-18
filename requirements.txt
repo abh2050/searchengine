@@ -1,0 +1,8 @@
+polars
+nltk
+rank-bm25
+scikit-learn
+streamlit
+watchdog
+streamlit_jupyter
+pyspark
