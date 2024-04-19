@@ -76,7 +76,7 @@ exploded_docs_df = documents_df.withColumn("opinion", explode("casebody.data.opi
 # Apply preprocessing to the 'text' field of each opinion
 preprocessed_docs_df = exploded_docs_df.withColumn("words", preprocess_text_udf(col("opinion.text")))
 
-# Show the structure and some example processed data
+# Showing the structure and some example processed data
 preprocessed_docs_df.printSchema()
 preprocessed_docs_df.select("words").show(truncate=False)
 
@@ -133,9 +133,6 @@ doc_lengths_df.show(truncate=False)
 from pyspark.sql.functions import count
 
 # Adjusting the number of partitions to better match the MacBook's capabilities
-# The M1 chip has 8 cores, but considering it's a single machine, 
-# a lower number might prevent excessive context switching and memory overhead.
-# Start with a number like 8 and adjust based on performance and resource utilization.
 num_partitions = 8
 
 # Repartition the DataFrame before performing the groupBy operation.
@@ -159,7 +156,7 @@ total_docs = doc_lengths_df.count()
 
 # Since repartition can cause extensive shuffling, especially before a groupBy operation,
 # ensure that it's necessary based on your dataset's characteristics and size.
-# Adjust the number of partitions if you decide to repartition.
+# Adjust the number of partitions
 repartitioned_flat_words_df = flat_words_df.repartition(8, "word")
 
 # Calculate the document frequency (DF) for each term: the number of documents containing the term
