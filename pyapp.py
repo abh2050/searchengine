@@ -19,12 +19,12 @@ nltk.download('stopwords')
 spark = SparkSession.builder.appName("LegalSearch").getOrCreate()
 
 # Assuming preprocessed data are stored in these paths
-path_to_flat_words = "/Users/abhishekshah/Desktop/Legal project/small_search/flat_words.parquet"
-path_to_doc_lengths = "/Users/abhishekshah/Desktop/Legal project/small_search/doc_lengths.parquet"
-path_to_term_frequencies = "/Users/abhishekshah/Desktop/Legal project/small_search/term_frequencies.parquet"
-path_to_idf_values = "/Users/abhishekshah/Desktop/Legal project/small_search/idf_values.parquet"
-path_to_scoring_params = "/Users/abhishekshah/Desktop/Legal project/small_search/scoring_params.parquet"  # This stores avgdl
-path_to_opinion_texts = "/Users/abhishekshah/Desktop/Legal project/small_search/opinion_text.parquet"
+path_to_flat_words = "https://github.com/abh2050/searchengine/tree/main/flat_words.parquet"
+path_to_doc_lengths = "https://github.com/abh2050/searchengine/tree/main/doc_lengths.parquet"
+path_to_term_frequencies = "https://github.com/abh2050/searchengine/tree/main/term_frequencies.parquet"
+path_to_idf_values = "https://github.com/abh2050/searchengine/tree/main/idf_values.parquet"
+path_to_scoring_params = "https://github.com/abh2050/searchengine/tree/main/scoring_params.parquet"  # This stores avgdl
+path_to_opinion_texts = "https://github.com/abh2050/searchengine/tree/main/opinion_text.parquet"
 
 # Load preprocessed data
 @st.cache_resource
