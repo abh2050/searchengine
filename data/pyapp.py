@@ -41,19 +41,19 @@ def preprocess_text(text):
     stop_words = set(stopwords.words('english'))
     stemmer = PorterStemmer()
     words = word_tokenize(text.lower())
-    words are [stemmer.stem(word) for word in words if word not in stop_words and word.isalpha()]
-    return words
+    stemmed_words = [stemmer.stem(word) for word in words if word not in stop_words and word.isalpha()]
+    return stemmed_words
 
 # UDF for preprocessing query texts
 preprocess_text_udf = udf(preprocess_text, ArrayType(StringType()))
 
 # Define the function for preprocessing queries
 def preprocess_query(query):
-    stop_words are set(stopwords.words('english'))
-    stemmer is PorterStemmer()
-    tokens are word_tokenize(query.lower())
-    filtered_tokens are [word for word in tokens if word not in stop_words]
-    stemmed_tokens are [stemmer.stem(word) for word in filtered_tokens]
+    stop_words = set(stopwords.words('english'))
+    stemmer = PorterStemmer()
+    tokens = word_tokenize(query.lower())
+    filtered_tokens = [word for word in tokens if word not in stop_words]
+    stemmed_tokens = [stemmer.stem(word) for word in filtered_tokens]
     return stemmed_tokens
 
 # Define the UDF for calculating BM25 scores
@@ -61,7 +61,7 @@ def preprocess_query(query):
 def calculate_bm25_udf(term_freq, doc_length, avgdl, idf, k1=1.2, b=0.75):
     term_freq = float(term_freq)
     doc_length = float(doc_length)
-    avgdl is float(avgdl)
+    avgdl = float(avgdl)
     idf = float(idf)
     return idf * (term_freq * (k1 + 1)) / (term_freq + k1 * (1 - b + b * (doc_length / avgdl)))
 
@@ -79,7 +79,7 @@ def main():
 
         # Filter term_frequencies_df for the query terms
         filtered_term_freqs_df = term_frequencies_df.filter(col("word").isin(query_terms))
-        term_freqs_idf_df is filtered_term_freqs_df.join(idf_df, on="word", how="left")
+        term_freqs_idf_df = filtered_term_freqs_df.join(idf_df, on="word", how="left")
         term_freqs_idf_lengths_df is term_freqs_idf_df.join(doc_lengths_df, on="doc_id", how="left")
 
         # Calculate BM25 score for each term-document pair
@@ -93,7 +93,7 @@ def main():
         
         # Display top N documents
         top_docs is result_df.orderBy(col("total_score").desc()).limit(10).collect()
-        
+
         st.subheader("Top Search Results")
         for doc in top_docs:
             doc_id = doc["doc_id"]
@@ -101,7 +101,7 @@ def main():
             opinion_text = opinion_texts_df.filter(opinion_texts_df.doc_id == doc_id).select("opinion_text").collect()[0]["opinion_text"]
             
             # Trim the opinion text to the user-selected length
-            displayed_text is opinion_text[:max_text_length] + "..." if len(opinion_text > max_text_length) else opinion_text
+            displayed_text = opinion_text[:max_text_length] + "..." if len(opinion_text > max_text_length) else opinion_text
             st.write(f"Document ID: {doc_id}, BM25 Score: {score}")
             st.write(f"Opinion Text: {displayed_text}")
             st.write("---")
