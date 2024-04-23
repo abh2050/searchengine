@@ -42,10 +42,6 @@ def preprocess_text(text):
     stemmed_words = [stemmer.stem(word) for word in words if word not in stop_words and word.isalpha()]
     return stemmed_words
 
-# Define the preprocessing function for queries
-def preprocess_query(query):
-    return preprocess_text(query)
-
 # Define the BM25 calculation function
 def calculate_bm25(term_freq, doc_length, avgdl, idf, k1=1.2, b=0.75):
     term_freq = float(term_freq)
@@ -63,11 +59,16 @@ def main():
     max_text_length = st.slider("Max length of opinion text", min_value=100, max_value=5000, value=1000, step=100)
 
     if query:
-        query_terms = preprocess_query(query)
+        query_terms = preprocess_text(query)
         st.write("Preprocessed query terms:", query_terms)
 
         # Filter term_frequencies_df for the query terms
         filtered_term_freqs_df = term_frequencies_df[term_frequencies_df["word"].isin(query_terms)]
+        
+        # Check if filtering succeeded
+        if filtered_term_freqs_df.empty:
+            st.warning("No term frequencies found for the given query. Please try again with different terms.")
+            return
         
         # Merge with IDF and document lengths dataframes
         term_freqs_idf_df = pd.merge(filtered_term_freqs_df, idf_df, on="word", how="left")
@@ -84,12 +85,27 @@ def main():
         # Aggregate BM25 scores by document
         result_df = term_freqs_idf_lengths_df.groupby("doc_id").agg({"bm25_score": "sum"}).sort_values("bm25_score", ascending=False).head(10)
 
+        # Check if result_df has data before iterating
+        if result_df.empty:
+            st.warning("No results found. Please try a different query.")
+            return
+        
         # Display top search results
         st.subheader("Top Search Results")
         for _, doc in result_df.iterrows():
             doc_id = doc["doc_id"]
             score = doc["bm25_score"]
-            opinion_text = opinion_texts_df[opinion_texts_df["doc_id"] == doc_id]["opinion_text"].values[0]
+
+            # Check if 'opinion_text' exists
+            opinion_texts = opinion_texts_df[opinion_texts_df["doc_id"] == doc_id]
+            
+            if opinion_texts.empty:
+                st.write(f"Document ID: {doc_id}, BM25 Score: {score}")
+                st.write("Opinion text not found for this document.")
+                st.write("---")
+                continue
+
+            opinion_text = opinion_texts["opinion_text"].values[0]
 
             # Trim the opinion text to the user-selected length
             displayed_text = opinion_text[:max_text_length] + "..." if len(opinion_text) > max_text_length else opinion_text
