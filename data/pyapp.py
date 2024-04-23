@@ -18,7 +18,7 @@ path_to_scoring_params = "./data/scoring_params.parquet"
 path_to_opinion_texts = "./data/opinion_text.parquet"
 
 # Load preprocessed data using pandas
-@st.cache_data
+@st.cache_resource
 def load_preprocessed_data():
     flat_words_df = pd.read_parquet(path_to_flat_words)
     doc_lengths_df = pd.read_parquet(path_to_doc_lengths)
@@ -28,21 +28,30 @@ def load_preprocessed_data():
     opinion_texts_df = pd.read_parquet(path_to_opinion_texts)
     return flat_words_df, doc_lengths_df, term_frequencies_df, idf_df, scoring_params_df, opinion_texts_df
 
-# Load the dataframes from cached data
+# Get preprocessed data
 flat_words_df, doc_lengths_df, term_frequencies_df, idf_df, scoring_params_df, opinion_texts_df = load_preprocessed_data()
 
-# Check if scoring_params_df has data before accessing 'avgdl'
-avgdl = scoring_params_df.iloc[0]["avgdl"] if not scoring_params_df.empty else 0
+# Get avgdl value from scoring_params_df
+avgdl = scoring_params_df.iloc[0]["avgdl"]
 
-# Preprocessing function for texts
+# Define text preprocessing function
 def preprocess_text(text):
-    stop_words = set(stopwords.words("english"))
+    stop_words = set(stopwords.words('english'))
     stemmer = PorterStemmer()
     words = word_tokenize(text.lower())
-    stemmed_words = [stemmer.stem(word) for word in words if word not in stop_words and word.isalpha()]
-    return stemmed_words
+    words = [stemmer.stem(word) for word in words if word not in stop_words and word.isalpha()]
+    return words
 
-# Define the BM25 calculation function
+# Define function for preprocessing queries
+def preprocess_query(query):
+    stop_words = set(stopwords.words('english'))
+    stemmer = PorterStemmer()
+    tokens = word_tokenize(query.lower())
+    filtered_tokens = [word for word in tokens if word not in stop_words]
+    stemmed_tokens = [stemmer.stem(word) for word in filtered_tokens]
+    return stemmed_tokens
+
+# Define a function for calculating BM25 scores
 def calculate_bm25(term_freq, doc_length, avgdl, idf, k1=1.2, b=0.75):
     term_freq = float(term_freq)
     doc_length = float(doc_length)
@@ -54,59 +63,38 @@ def calculate_bm25(term_freq, doc_length, avgdl, idf, k1=1.2, b=0.75):
 def main():
     st.title("Legal Document Search")
     query = st.text_input("Enter your search query:")
-
+    
     # Slider to control the maximum length of the opinion text displayed
     max_text_length = st.slider("Max length of opinion text", min_value=100, max_value=5000, value=1000, step=100)
 
     if query:
-        query_terms = preprocess_text(query)
+        query_terms = preprocess_query(query)
         st.write("Preprocessed query terms:", query_terms)
 
         # Filter term_frequencies_df for the query terms
         filtered_term_freqs_df = term_frequencies_df[term_frequencies_df["word"].isin(query_terms)]
-        
-        # Check if filtering succeeded
-        if filtered_term_freqs_df.empty:
-            st.warning("No term frequencies found for the given query. Please try again with different terms.")
-            return
-        
-        # Merge with IDF and document lengths dataframes
-        term_freqs_idf_df = pd.merge(filtered_term_freqs_df, idf_df, on="word", how="left")
-        term_freqs_idf_lengths_df = pd.merge(term_freqs_idf_df, doc_lengths_df, on="doc_id", how="left")
-        
-        # Calculate BM25 scores
+        term_freqs_idf_df = filtered_term_freqs_df.merge(idf_df, on="word", how="left")
+        term_freqs_idf_lengths_df = term_freqs_idf_df.merge(doc_lengths_df, on="doc_id", how="left")
+
+        # Calculate BM25 score for each term-document pair
         term_freqs_idf_lengths_df["bm25_score"] = term_freqs_idf_lengths_df.apply(
-            lambda row: calculate_bm25(
-                row["term_freq"], row["doc_length"], avgdl, row["idf"]
-            ),
+            lambda row: calculate_bm25(row["term_freq"], row["doc_length"], avgdl, row["idf"]),
             axis=1,
         )
-        
-        # Aggregate BM25 scores by document
-        result_df = term_freqs_idf_lengths_df.groupby("doc_id").agg({"bm25_score": "sum"}).sort_values("bm25_score", ascending=False).head(10)
 
-        # Check if result_df has data before iterating
-        if result_df.empty:
-            st.warning("No results found. Please try a different query.")
-            return
-        
-        # Display top search results
+        # Aggregate scores by document
+        result_df = term_freqs_idf_lengths_df.groupby("doc_id")["bm25_score"].sum().reset_index(name="total_score")
+
+        # Display top N documents
+        top_docs = result_df.nlargest(10, "total_score")
+
         st.subheader("Top Search Results")
-        for _, doc in result_df.iterrows():
+        for _, doc in top_docs.iterrows():
             doc_id = doc["doc_id"]
-            score = doc["bm25_score"]
-
-            # Check if 'opinion_text' exists
-            opinion_texts = opinion_texts_df[opinion_texts_df["doc_id"] == doc_id]
+            score = doc["total_score"]
+            # Fetch the opinion text for the current document ID
+            opinion_text = opinion_texts_df[opinion_texts_df["doc_id"] == doc_id]["opinion_text"].values[0]
             
-            if opinion_texts.empty:
-                st.write(f"Document ID: {doc_id}, BM25 Score: {score}")
-                st.write("Opinion text not found for this document.")
-                st.write("---")
-                continue
-
-            opinion_text = opinion_texts["opinion_text"].values[0]
-
             # Trim the opinion text to the user-selected length
             displayed_text = opinion_text[:max_text_length] + "..." if len(opinion_text) > max_text_length else opinion_text
             st.write(f"Document ID: {doc_id}, BM25 Score: {score}")
