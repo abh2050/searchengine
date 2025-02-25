@@ -1,4 +1,6 @@
 ![](https://cdn.aarp.net/content/aarpe/en/home/home-family/personal-technology/info-2021/tips-to-use-search-engines/_jcr_content/root/container_main/container_body_main/container_body1/container_body_cf/container_image/articlecontentfragment/cfimage.coreimg.50.932.jpeg/content/dam/aarp/home-and-family/personal-technology/2023/10/1140-search-engine-tips.jpg)
+
+[Legal Document Search App](https://searchenginespark.streamlit.app/).
 # Legal Document Search System
 
 ## Overview
